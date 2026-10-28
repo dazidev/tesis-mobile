@@ -1,98 +1,170 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { CustomButton } from "../components/common/CustomButton";
+import { CustomInput } from "../components/common/CustomInput";
+import { Colors } from "../theme/colors";
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+export default function LoginScreen() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleLogin = () => {
+    setErrorMessage("");
+
+    if (!email.trim() || !password) {
+      setErrorMessage("Todos los campos son obligatorios.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMessage("Ingrese un correo electrónico válido.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMessage("La contraseña debe contener al menos 8 caracteres.");
+      return;
+    }
+
+    Alert.alert(
+      "Formulario validado",
+      "El diseño está listo. En el siguiente paso conectaremos el inicio de sesión con el backend.",
     );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  };
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          <Text style={styles.appName}>Seguimiento Sucesorio</Text>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+          <Text style={styles.appDescription}>
+            Sistema de seguimiento de procesos judiciales
+          </Text>
+        </View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <View style={styles.card}>
+          <Text style={styles.title}>Iniciar sesión</Text>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+          <Text style={styles.subtitle}>
+            Ingrese sus credenciales para consultar el estado de su proceso.
+          </Text>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+          <View style={styles.form}>
+            <CustomInput
+              label="Correo electrónico"
+              placeholder="Ingrese su correo electrónico"
+              type="email"
+              value={email}
+              onChangeText={setEmail}
+            />
+
+            <CustomInput
+              label="Contraseña"
+              placeholder="Ingrese su contraseña"
+              type="password"
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            {errorMessage ? (
+              <Text style={styles.error}>{errorMessage}</Text>
+            ) : null}
+
+            <View style={styles.buttonContainer}>
+              <CustomButton label="Iniciar sesión" onPress={handleLogin} />
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: Colors.pwhite,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  header: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  appName: {
+    fontSize: 27,
+    fontWeight: "600",
+    color: Colors.pgray,
+    textAlign: "center",
+  },
+
+  appDescription: {
+    fontSize: 15,
+    color: Colors.sgray,
+    textAlign: "center",
+    marginTop: 6,
+    maxWidth: 320,
+    lineHeight: 22,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 450,
+    alignSelf: "center",
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.pborder,
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 30,
   },
   title: {
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: "600",
+    color: Colors.pgray,
   },
-  code: {
-    textTransform: 'uppercase',
+  subtitle: {
+    fontSize: 16,
+    color: Colors.sgray,
+    lineHeight: 24,
+    marginTop: 8,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  form: {
+    gap: 16,
+    marginTop: 24,
+  },
+  buttonContainer: {
+    marginTop: 8,
+  },
+  error: {
+    fontSize: 13,
+    color: Colors.error,
+    textAlign: "center",
+  },
+  footer: {
+    marginTop: 28,
+    fontSize: 12,
+    textAlign: "center",
+    color: Colors.sgray,
   },
 });
