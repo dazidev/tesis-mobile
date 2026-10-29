@@ -1,7 +1,16 @@
-import axios from "axios";
+import { isAxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
 
-import { api, publicApi } from "../infrastructure/api";
+import {
+  beginSignOut,
+  clearStoredSession,
+  endSignOut,
+  publicApi,
+  refreshSession,
+  saveLoginSession,
+  SessionExpiredError,
+  waitForPendingRefresh,
+} from "../infrastructure/api";
 import { getDeviceId, getDeviceInfo } from "../infrastructure/device";
 import { AUTH_KEYS } from "../infrastructure/session-storage";
 
@@ -34,7 +43,7 @@ export const login = async (
 
     data = response.data;
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       if (!error.response) {
         throw new Error("No fue posible conectar con el servidor.");
       }
@@ -62,16 +71,14 @@ export const login = async (
   }
 
   try {
-    await SecureStore.setItemAsync(AUTH_KEYS.accessToken, data.accessToken);
-
-    await SecureStore.setItemAsync(AUTH_KEYS.refreshToken, data.refreshToken);
+    await saveLoginSession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+    });
   } catch {
-    await Promise.allSettled([
-      SecureStore.deleteItemAsync(AUTH_KEYS.accessToken),
-      SecureStore.deleteItemAsync(AUTH_KEYS.refreshToken),
-    ]);
+    await clearStoredSession();
 
-    await api
+    await publicApi
       .post("/auth/logout-web", {
         refreshToken: data.refreshToken,
       })
@@ -83,26 +90,6 @@ export const login = async (
   return data.user;
 };
 
-interface RefreshResponse {
-  user: AuthUser;
-  accessToken: string;
-  refreshToken: string;
-  accessTokenExpiresIn: number;
-  refreshTokenExpiresIn: number;
-}
-
-interface CurrentUserResponse {
-  ok: boolean;
-  user: AuthUser;
-}
-
-export const clearStoredSession = async (): Promise<void> => {
-  await Promise.all([
-    SecureStore.deleteItemAsync(AUTH_KEYS.accessToken),
-    SecureStore.deleteItemAsync(AUTH_KEYS.refreshToken),
-  ]);
-};
-
 export const restoreSession = async (): Promise<AuthUser | null> => {
   const refreshToken = await SecureStore.getItemAsync(AUTH_KEYS.refreshToken);
 
@@ -112,40 +99,11 @@ export const restoreSession = async (): Promise<AuthUser | null> => {
   }
 
   try {
-    const { data } = await publicApi.post<RefreshResponse>(
-      "/auth/refresh-web",
-      { refreshToken },
-    );
+    const data = await refreshSession();
 
-    const user = data.user;
-
-    if (
-      !user ||
-      !Array.isArray(user.roles) ||
-      !user.roles.includes("client") ||
-      user.status !== "active"
-    ) {
-      await publicApi
-        .post("/auth/logout-web", {
-          refreshToken: data.refreshToken,
-        })
-        .catch(() => undefined);
-
-      await clearStoredSession();
-      return null;
-    }
-
-    await SecureStore.setItemAsync(AUTH_KEYS.accessToken, data.accessToken);
-
-    await SecureStore.setItemAsync(AUTH_KEYS.refreshToken, data.refreshToken);
-
-    return user;
+    return data.user;
   } catch (error: unknown) {
-    if (
-      axios.isAxiosError(error) &&
-      [400, 401, 403].includes(error.response?.status ?? 0)
-    ) {
-      await clearStoredSession();
+    if (error instanceof SessionExpiredError) {
       return null;
     }
 
@@ -154,11 +112,15 @@ export const restoreSession = async (): Promise<AuthUser | null> => {
 };
 
 export const logoutSession = async (): Promise<boolean> => {
-  const refreshToken = await SecureStore.getItemAsync(AUTH_KEYS.refreshToken);
+  beginSignOut();
 
   let revoked = true;
 
   try {
+    await waitForPendingRefresh();
+
+    const refreshToken = await SecureStore.getItemAsync(AUTH_KEYS.refreshToken);
+
     if (refreshToken) {
       await publicApi.post("/auth/logout-web", {
         refreshToken,
@@ -167,7 +129,11 @@ export const logoutSession = async (): Promise<boolean> => {
   } catch {
     revoked = false;
   } finally {
-    await clearStoredSession();
+    try {
+      await clearStoredSession();
+    } finally {
+      endSignOut();
+    }
   }
 
   return revoked;
