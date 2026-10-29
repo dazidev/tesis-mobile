@@ -1,22 +1,10 @@
 import { Alert, StyleSheet, Text, View } from "react-native";
-
-import { api } from "@/infrastructure/api";
 import { CustomButton } from "../../components/common/CustomButton";
 import { useAuth } from "../../contexts/AuthContext";
 import { Colors } from "../../theme/colors";
 
 export default function HomeScreen() {
   const { user, signOut } = useAuth();
-
-  const handleTestSession = async () => {
-    try {
-      const { data } = await api.get("/auth/private3");
-
-      Alert.alert("Sesión válida", `Usuario autenticado: ${data.user.name}`);
-    } catch {
-      Alert.alert("Error", "No fue posible verificar la sesión.");
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -45,7 +33,6 @@ export default function HomeScreen() {
       </Text>
 
       <View style={styles.buttonContainer}>
-        <CustomButton label="Verificar sesión" onPress={handleTestSession} />
         <CustomButton label="Cerrar sesión" onPress={handleLogout} />
       </View>
     </View>
