@@ -1,6 +1,4 @@
-import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -8,38 +6,30 @@ import {
   Text,
   View,
 } from "react-native";
-
 import { CustomButton } from "../components/common/CustomButton";
 import { CustomInput } from "../components/common/CustomInput";
+import { useAuth } from "../contexts/AuthContext";
 import { Colors } from "../theme/colors";
+import { useLoginViewModel } from "../viewmodels/useLoginViewModel";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isLoading,
+    errorMessage,
+    handleLogin,
+  } = useLoginViewModel();
+  const { signIn } = useAuth();
 
-  const handleLogin = () => {
-    setErrorMessage("");
+  const onSubmit = async () => {
+    const user = await handleLogin();
 
-    if (!email.trim() || !password) {
-      setErrorMessage("Todos los campos son obligatorios.");
-      return;
+    if (user) {
+      signIn(user);
     }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMessage("Ingrese un correo electrónico válido.");
-      return;
-    }
-
-    if (password.length < 8) {
-      setErrorMessage("La contraseña debe contener al menos 8 caracteres.");
-      return;
-    }
-
-    Alert.alert(
-      "Formulario validado",
-      "El diseño está listo. En el siguiente paso conectaremos el inicio de sesión con el backend.",
-    );
   };
 
   return (
@@ -88,7 +78,11 @@ export default function LoginScreen() {
             ) : null}
 
             <View style={styles.buttonContainer}>
-              <CustomButton label="Iniciar sesión" onPress={handleLogin} />
+              <CustomButton
+                label={isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
+                onPress={onSubmit}
+                disabled={isLoading}
+              />
             </View>
           </View>
         </View>
