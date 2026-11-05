@@ -123,7 +123,7 @@ export const refreshSession = (): Promise<RefreshResponse> => {
 
     try {
       const response = await publicApi.post<RefreshResponse>(
-        "/auth/refresh-web",
+        "/auth/refresh-mobile",
         { refreshToken },
       );
 
@@ -160,7 +160,7 @@ export const refreshSession = (): Promise<RefreshResponse> => {
       data.user.status !== "active"
     ) {
       await publicApi
-        .post("/auth/logout-web", {
+        .post("/auth/logout-mobile", {
           refreshToken: data.refreshToken,
         })
         .catch(() => undefined);

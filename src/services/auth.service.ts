@@ -19,6 +19,7 @@ import {
   LoginRequest,
   LoginResponse,
 } from "../interfaces/auth.interface";
+import { clearClientPdfCache } from "./document.service";
 
 export const login = async (
   email: string,
@@ -37,7 +38,7 @@ export const login = async (
 
   try {
     const response = await publicApi.post<LoginResponse>(
-      "/auth/login-web",
+      "/auth/login-mobile",
       payload,
     );
 
@@ -53,6 +54,11 @@ export const login = async (
           "No fue posible iniciar sesión. Verifique sus credenciales.",
         );
       }
+      if (error.response.status === 403) {
+        throw new Error(
+          "Esta aplicación está disponible únicamente para clientes activos.",
+        );
+      }
     }
 
     throw new Error("Ocurrió un error al iniciar sesión.");
@@ -60,7 +66,7 @@ export const login = async (
 
   if (!data.user.roles.includes("client") || data.user.status !== "active") {
     await publicApi
-      .post("/auth/logout-web", {
+      .post("/auth/logout-mobile", {
         refreshToken: data.refreshToken,
       })
       .catch(() => undefined);
@@ -132,7 +138,17 @@ export const logoutSession = async (): Promise<boolean> => {
     try {
       await clearStoredSession();
     } finally {
-      endSignOut();
+      try {
+        await clearStoredSession();
+
+        try {
+          clearClientPdfCache();
+        } catch {
+          // No impedir el cierre de sesión si falla la limpieza.
+        }
+      } finally {
+        endSignOut();
+      }
     }
   }
 

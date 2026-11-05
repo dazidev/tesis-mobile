@@ -1,3 +1,4 @@
+import { clearClientPdfCache } from "@/services/document.service";
 import {
   createContext,
   useCallback,
@@ -68,6 +69,11 @@ export const AuthProvider = ({ children }: Props) => {
 
   useEffect(() => {
     setSessionExpiredHandler(() => {
+      try {
+        clearClientPdfCache();
+      } catch {
+        // La invalidación de sesión debe continuar.
+      }
       setUser(null);
     });
 
