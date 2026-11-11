@@ -19,6 +19,10 @@ import {
 } from "../../../interfaces/process.interface";
 import { Colors } from "../../../theme/colors";
 import { useProcessDetailViewModel } from "../../../viewmodels/useProcessDetailViewModel";
+import { useState } from "react";
+import { ManagedStageAccordion } from "../../../components/process/ManagedStageAccordion";
+import { ProcessClientsPanel } from "../../../components/process/ProcessClientsPanel";
+import { ProcessActions } from "../../../components/process/ProcessActions";
 
 const typeLabels: Record<ProcessType, string> = {
   testate: "Testamentario",
@@ -37,6 +41,7 @@ export default function ProcessDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const processId = typeof id === "string" ? id : "";
+  const [revision, setRevision] = useState(0);
 
   const {
     process,
@@ -48,7 +53,14 @@ export default function ProcessDetailScreen() {
     folders,
     openingFileId,
     openFile,
+    reload,
+    isLawyer,
   } = useProcessDetailViewModel(processId);
+
+  const handleChanged = async () => {
+    await reload();
+    setRevision((value) => value + 1);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -82,7 +94,7 @@ export default function ProcessDetailScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={refresh}
+              onRefresh={isLawyer ? () => void handleChanged() : refresh}
               tintColor={Colors.pblue}
             />
           }
@@ -96,6 +108,13 @@ export default function ProcessDetailScreen() {
               Juicio sucesorio {typeLabels[process.type].toLowerCase()}
             </Text>
           </View>
+
+          {isLawyer && (
+            <ProcessActions process={process} onChanged={handleChanged} />
+          )}
+          {isLawyer && (
+            <ProcessClientsPanel processId={process.id} revision={revision} />
+          )}
 
           <View style={styles.informationCard}>
             <Text style={styles.cardTitle}>Información general</Text>
@@ -128,15 +147,27 @@ export default function ProcessDetailScreen() {
               </View>
             ) : (
               <View style={styles.stagesList}>
-                {process.stages.map((stage) => (
-                  <StageAccordion
-                    key={stage.id}
-                    stage={stage}
-                    folders={folders}
-                    openingFileId={openingFileId}
-                    onOpenFile={openFile}
-                  />
-                ))}
+                {process.stages.map((stage, index) =>
+                  isLawyer ? (
+                    <ManagedStageAccordion
+                      key={stage.id}
+                      item={stage}
+                      stage={stage}
+                      nextStage={process.stages[index + 1]}
+                      processStatus={process.status}
+                      revision={revision}
+                      onChanged={handleChanged}
+                    />
+                  ) : (
+                    <StageAccordion
+                      key={stage.id}
+                      stage={stage}
+                      folders={folders}
+                      openingFileId={openingFileId}
+                      onOpenFile={openFile}
+                    />
+                  ),
+                )}
               </View>
             )}
           </View>

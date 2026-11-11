@@ -1,5 +1,6 @@
 import { isAxiosError } from "axios";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
 
 import { previewClientPdf } from "@/services/document.service";
 import { Alert } from "react-native";
@@ -12,8 +13,12 @@ import {
   getMyProcessById,
   getMyProcessDocuments,
 } from "../services/process.service";
+import { useAuth } from "../contexts/AuthContext";
+import { getManagedProcess } from "../services/management.service";
 
 export const useProcessDetailViewModel = (processId: string) => {
+  const { user } = useAuth();
+  const isLawyer = !!user?.roles.includes("lawyer");
   const [process, setProcess] = useState<ClientProcessDetail | null>(null);
   const [folders, setFolders] = useState<ClientDigitalFolder[]>([]);
 
@@ -48,8 +53,8 @@ export const useProcessDetailViewModel = (processId: string) => {
 
       try {
         const [data, documentFolders] = await Promise.all([
-          getMyProcessById(processId),
-          getMyProcessDocuments(processId),
+          isLawyer ? getManagedProcess(processId) : getMyProcessById(processId),
+          isLawyer ? Promise.resolve([]) : getMyProcessDocuments(processId),
         ]);
 
         if (requestId === requestIdRef.current) {
@@ -81,7 +86,7 @@ export const useProcessDetailViewModel = (processId: string) => {
         }
       }
     },
-    [processId],
+    [processId, isLawyer],
   );
 
   const openFile = async (file: ClientDigitalFile) => {
@@ -103,13 +108,15 @@ export const useProcessDetailViewModel = (processId: string) => {
     }
   };
 
-  useEffect(() => {
-    void loadProcess();
+  useFocusEffect(
+    useCallback(() => {
+      void loadProcess();
 
-    return () => {
-      requestIdRef.current += 1;
-    };
-  }, [loadProcess]);
+      return () => {
+        requestIdRef.current += 1;
+      };
+    }, [loadProcess]),
+  );
 
   return {
     process,
@@ -121,5 +128,7 @@ export const useProcessDetailViewModel = (processId: string) => {
     folders,
     openingFileId,
     openFile,
+    reload: () => loadProcess(true),
+    isLawyer,
   };
 };

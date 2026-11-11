@@ -19,6 +19,8 @@ import {
 } from "../../interfaces/process.interface";
 import { Colors } from "../../theme/colors";
 import { useMyProcessesViewModel } from "../../viewmodels/useMyProcessesViewModel";
+import type { ManagedProcess } from "../../interfaces/management.interface";
+import { CreateProcessButton } from "../../components/process/CreateProcessButton";
 
 const processTypes: Record<ProcessType, string> = {
   testate: "Testamentario",
@@ -36,8 +38,16 @@ export default function HomeScreen() {
   const { user, signOut } = useAuth();
   const router = useRouter();
 
-  const { processes, isLoading, isRefreshing, errorMessage, refresh, retry } =
-    useMyProcessesViewModel();
+  const {
+    processes,
+    isLoading,
+    isRefreshing,
+    errorMessage,
+    refresh,
+    retry,
+    reload,
+    isLawyer,
+  } = useMyProcessesViewModel();
 
   const handleLogout = async () => {
     try {
@@ -54,7 +64,11 @@ export default function HomeScreen() {
     }
   };
 
-  const renderProcess = ({ item }: { item: ClientProcess }) => {
+  const renderProcess = ({
+    item,
+  }: {
+    item: ClientProcess | ManagedProcess;
+  }) => {
     return (
       <Pressable
         style={({ pressed }) => [
@@ -91,10 +105,14 @@ export default function HomeScreen() {
         <Text style={styles.detailLabel}>Juzgado</Text>
         <Text style={styles.detailValue}>{item.courtNumber}</Text>
 
-        <Text style={styles.detailLabel}>Finado</Text>
-        <Text style={styles.detailValue}>
-          {item.defendant.name} {item.defendant.lastname}
-        </Text>
+        {"defendant" in item && (
+          <>
+            <Text style={styles.detailLabel}>Finado</Text>
+            <Text style={styles.detailValue}>
+              {item.defendant.name} {item.defendant.lastname}
+            </Text>
+          </>
+        )}
       </Pressable>
     );
   };
@@ -119,11 +137,13 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Bienvenido, {user?.name}</Text>
 
             <Text style={styles.subtitle}>
-              Consulte los procesos judiciales en los que se encuentra
-              vinculado.
+              {isLawyer
+                ? "Administre sus expedientes, documentos, tareas y clientes desde su teléfono."
+                : "Consulte los procesos judiciales en los que se encuentra vinculado."}
             </Text>
 
             <Text style={styles.sectionTitle}>Mis procesos</Text>
+            {isLawyer && <CreateProcessButton onChanged={reload} />}
           </View>
         }
         ListEmptyComponent={
@@ -140,7 +160,9 @@ export default function HomeScreen() {
               </>
             ) : (
               <Text style={styles.emptyText}>
-                Actualmente no tiene procesos judiciales vinculados a su cuenta.
+                {isLawyer
+                  ? "Todavía no tiene procesos registrados. Cree su primer expediente para comenzar."
+                  : "Actualmente no tiene procesos judiciales vinculados a su cuenta."}
               </Text>
             )}
           </View>
