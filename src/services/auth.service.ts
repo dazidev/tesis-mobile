@@ -56,7 +56,7 @@ export const login = async (
       }
       if (error.response.status === 403) {
         throw new Error(
-          "Esta aplicación está disponible únicamente para clientes activos.",
+          "Esta aplicación está disponible para clientes y abogados activos.",
         );
       }
     }
@@ -64,7 +64,10 @@ export const login = async (
     throw new Error("Ocurrió un error al iniciar sesión.");
   }
 
-  if (!data.user.roles.includes("client") || data.user.status !== "active") {
+  if (
+    !data.user.roles.some((role) => role === "client" || role === "lawyer") ||
+    data.user.status !== "active"
+  ) {
     await publicApi
       .post("/auth/logout-mobile", {
         refreshToken: data.refreshToken,
@@ -72,7 +75,7 @@ export const login = async (
       .catch(() => undefined);
 
     throw new Error(
-      "Esta aplicación está disponible únicamente para clientes activos.",
+      "Esta aplicación está disponible para clientes y abogados activos.",
     );
   }
 
@@ -85,7 +88,7 @@ export const login = async (
     await clearStoredSession();
 
     await publicApi
-      .post("/auth/logout-web", {
+      .post("/auth/logout-mobile", {
         refreshToken: data.refreshToken,
       })
       .catch(() => undefined);
@@ -128,7 +131,7 @@ export const logoutSession = async (): Promise<boolean> => {
     const refreshToken = await SecureStore.getItemAsync(AUTH_KEYS.refreshToken);
 
     if (refreshToken) {
-      await publicApi.post("/auth/logout-web", {
+      await publicApi.post("/auth/logout-mobile", {
         refreshToken,
       });
     }

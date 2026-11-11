@@ -53,7 +53,7 @@ export default function LoginScreen() {
           <Text style={styles.title}>Iniciar sesión</Text>
 
           <Text style={styles.subtitle}>
-            Ingrese sus credenciales para consultar el estado de su proceso.
+            Ingrese sus credenciales para acceder a sus procesos judiciales.
           </Text>
 
           <View style={styles.form}>
