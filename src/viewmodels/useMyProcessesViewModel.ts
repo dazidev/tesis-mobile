@@ -10,7 +10,8 @@ import { getManagedProcesses } from "../services/management.service";
 
 export const useMyProcessesViewModel = () => {
   const { user } = useAuth();
-  const isLawyer = !!user?.roles.includes("lawyer");
+  const isAdmin = !!user?.roles.includes("admin");
+  const canManageProcesses = isAdmin || !!user?.roles.includes("lawyer");
   const [processes, setProcesses] = useState<
     (ClientProcess | ManagedProcess)[]
   >([]);
@@ -29,7 +30,7 @@ export const useMyProcessesViewModel = () => {
       setErrorMessage("");
 
       try {
-        const data = isLawyer
+        const data = canManageProcesses
           ? await getManagedProcesses()
           : await getMyProcesses();
 
@@ -46,7 +47,7 @@ export const useMyProcessesViewModel = () => {
         setIsRefreshing(false);
       }
     },
-    [isLawyer],
+    [canManageProcesses],
   );
 
   useFocusEffect(
@@ -63,6 +64,7 @@ export const useMyProcessesViewModel = () => {
     refresh: () => void loadProcesses(true),
     retry: () => void loadProcesses(),
     reload: () => loadProcesses(true),
-    isLawyer,
+    isAdmin,
+    canManageProcesses,
   };
 };

@@ -18,7 +18,8 @@ import { getManagedProcess } from "../services/management.service";
 
 export const useProcessDetailViewModel = (processId: string) => {
   const { user } = useAuth();
-  const isLawyer = !!user?.roles.includes("lawyer");
+  const isAdmin = !!user?.roles.includes("admin");
+  const canManageProcesses = isAdmin || !!user?.roles.includes("lawyer");
   const [process, setProcess] = useState<ClientProcessDetail | null>(null);
   const [folders, setFolders] = useState<ClientDigitalFolder[]>([]);
 
@@ -53,8 +54,12 @@ export const useProcessDetailViewModel = (processId: string) => {
 
       try {
         const [data, documentFolders] = await Promise.all([
-          isLawyer ? getManagedProcess(processId) : getMyProcessById(processId),
-          isLawyer ? Promise.resolve([]) : getMyProcessDocuments(processId),
+          canManageProcesses
+            ? getManagedProcess(processId)
+            : getMyProcessById(processId),
+          canManageProcesses
+            ? Promise.resolve([])
+            : getMyProcessDocuments(processId),
         ]);
 
         if (requestId === requestIdRef.current) {
@@ -86,7 +91,7 @@ export const useProcessDetailViewModel = (processId: string) => {
         }
       }
     },
-    [processId, isLawyer],
+    [processId, canManageProcesses],
   );
 
   const openFile = async (file: ClientDigitalFile) => {
@@ -129,6 +134,7 @@ export const useProcessDetailViewModel = (processId: string) => {
     openingFileId,
     openFile,
     reload: () => loadProcess(true),
-    isLawyer,
+    isAdmin,
+    canManageProcesses,
   };
 };

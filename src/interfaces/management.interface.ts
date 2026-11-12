@@ -6,7 +6,12 @@ import type {
   ProcessType,
 } from "./process.interface";
 
-export type ManagedProcess = Omit<ClientProcess, "defendant">;
+export interface ManagedProcess extends Omit<
+  ClientProcess,
+  "defendant" | "status"
+> {
+  status: ClientProcess["status"] | "deleted";
+}
 
 export interface CreateProcessRequest {
   courtNumber: string;

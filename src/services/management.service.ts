@@ -25,9 +25,7 @@ export const getOperationError = (error: unknown): string => {
 };
 
 export const getManagedProcesses = async () =>
-  (await api.get<ManagedProcess[]>("/processes")).data.filter((process) =>
-    ["created", "opened", "closed"].includes(process.status),
-  );
+  (await api.get<ManagedProcess[]>("/processes")).data;
 export const getManagedProcess = async (id: string) =>
   (await api.get<ClientProcessDetail>(`/processes/${id}`)).data;
 export const createProcess = async (data: CreateProcessRequest) => {

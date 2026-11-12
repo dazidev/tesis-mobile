@@ -3,6 +3,7 @@ import type { ProcessType } from "../../interfaces/process.interface";
 import { useManagementActions } from "../../viewmodels/useManagementActions";
 import { CustomButton } from "../common/CustomButton";
 import { OperationFormModal } from "../common/OperationFormModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function CreateProcessButton({
   onChanged,
@@ -10,6 +11,8 @@ export function CreateProcessButton({
   onChanged: () => Promise<void>;
 }) {
   const actions = useManagementActions(onChanged);
+  const { user } = useAuth();
+  const isAdmin = !!user?.roles.includes("admin");
   return (
     <>
       <CustomButton
@@ -17,8 +20,9 @@ export function CreateProcessButton({
         onPress={() =>
           actions.openForm({
             title: "Crear proceso",
-            description:
-              "El proceso quedará pendiente de inicio y usted será el abogado responsable.",
+            description: isAdmin
+              ? "El proceso quedará pendiente de inicio y usted será su responsable."
+              : "El proceso quedará pendiente de inicio y usted será el abogado responsable.",
             fields: [
               {
                 key: "caseFileNumber",

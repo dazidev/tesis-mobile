@@ -5,9 +5,17 @@ interface Props {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  variant?: "filled" | "outline";
+  danger?: boolean;
 }
 
-export const CustomButton = ({ label, onPress, disabled = false }: Props) => {
+export const CustomButton = ({
+  label,
+  onPress,
+  disabled = false,
+  variant = "filled",
+  danger = false,
+}: Props) => {
   return (
     <Pressable
       onPress={onPress}
@@ -16,11 +24,24 @@ export const CustomButton = ({ label, onPress, disabled = false }: Props) => {
       accessibilityState={{ disabled }}
       style={({ pressed }) => [
         styles.button,
-        pressed && styles.pressed,
+        variant === "outline" && styles.outline,
+        danger && styles.danger,
+        pressed &&
+          (variant === "outline" || danger
+            ? styles.outlinePressed
+            : styles.pressed),
         disabled && styles.disabled,
       ]}
     >
-      <Text style={styles.text}>{label}</Text>
+      <Text
+        style={[
+          styles.text,
+          variant === "outline" && styles.outlineText,
+          danger && styles.dangerText,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 };
@@ -36,6 +57,19 @@ const styles = StyleSheet.create({
   pressed: {
     backgroundColor: Colors.pbutton,
   },
+  outline: {
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: Colors.pblue,
+  },
+  outlineText: { color: Colors.pblue },
+  danger: {
+    backgroundColor: "#FCF3F2",
+    borderWidth: 1,
+    borderColor: Colors.error,
+  },
+  dangerText: { color: Colors.error },
+  outlinePressed: { opacity: 0.75 },
   disabled: {
     opacity: 0.6,
   },

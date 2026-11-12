@@ -28,10 +28,11 @@ const processTypes: Record<ProcessType, string> = {
   mixed: "Mixto",
 };
 
-const processStatuses: Record<ProcessStatus, string> = {
+const processStatuses: Record<ProcessStatus | "deleted", string> = {
   created: "Pendiente",
   opened: "En curso",
   closed: "Finalizado",
+  deleted: "Desactivado",
 };
 
 export default function HomeScreen() {
@@ -46,7 +47,8 @@ export default function HomeScreen() {
     refresh,
     retry,
     reload,
-    isLawyer,
+    isAdmin,
+    canManageProcesses,
   } = useMyProcessesViewModel();
 
   const handleLogout = async () => {
@@ -71,12 +73,18 @@ export default function HomeScreen() {
   }) => {
     return (
       <Pressable
+        disabled={item.status === "deleted"}
         style={({ pressed }) => [
           styles.processCard,
           pressed && { opacity: 0.75 },
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`Ver expediente ${item.caseFileNumber}`}
+        accessibilityState={{ disabled: item.status === "deleted" }}
+        accessibilityLabel={
+          item.status === "deleted"
+            ? `Expediente ${item.caseFileNumber}, desactivado`
+            : `Ver expediente ${item.caseFileNumber}`
+        }
         onPress={() =>
           router.push({
             pathname: "/(private)/processes/[id]",
@@ -118,7 +126,10 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+    <SafeAreaView
+      style={styles.container}
+      edges={isAdmin ? ["top"] : ["top", "bottom"]}
+    >
       <FlatList
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -137,13 +148,22 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Bienvenido, {user?.name}</Text>
 
             <Text style={styles.subtitle}>
-              {isLawyer
-                ? "Administre sus expedientes, documentos, tareas y clientes desde su teléfono."
-                : "Consulte los procesos judiciales en los que se encuentra vinculado."}
+              {isAdmin
+                ? "Administre los procesos judiciales del sistema."
+                : canManageProcesses
+                  ? "Administre sus expedientes, documentos, tareas y clientes desde su teléfono."
+                  : "Consulte los procesos judiciales en los que se encuentra vinculado."}
             </Text>
 
-            <Text style={styles.sectionTitle}>Mis procesos</Text>
-            {isLawyer && <CreateProcessButton onChanged={reload} />}
+            {isAdmin && (
+              <View style={styles.roleBadge}>
+                <Text style={styles.roleText}>Administrador</Text>
+              </View>
+            )}
+            <Text style={styles.sectionTitle}>
+              {isAdmin ? "Procesos" : "Mis procesos"}
+            </Text>
+            {canManageProcesses && <CreateProcessButton onChanged={reload} />}
           </View>
         }
         ListEmptyComponent={
@@ -160,7 +180,7 @@ export default function HomeScreen() {
               </>
             ) : (
               <Text style={styles.emptyText}>
-                {isLawyer
+                {canManageProcesses
                   ? "Todavía no tiene procesos registrados. Cree su primer expediente para comenzar."
                   : "Actualmente no tiene procesos judiciales vinculados a su cuenta."}
               </Text>
@@ -169,7 +189,11 @@ export default function HomeScreen() {
         }
         ListFooterComponent={
           <View style={styles.footer}>
-            <CustomButton label="Cerrar sesión" onPress={handleLogout} />
+            <CustomButton
+              label="Cerrar sesión"
+              onPress={handleLogout}
+              variant={isAdmin ? "outline" : "filled"}
+            />
           </View>
         }
       />
@@ -191,6 +215,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 8,
   },
+  roleBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: Colors.sbutton,
+    borderRadius: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  roleText: { color: Colors.pgray, fontSize: 12, fontWeight: "500" },
   greeting: {
     fontSize: 25,
     fontWeight: "600",

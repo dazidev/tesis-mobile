@@ -56,7 +56,7 @@ export const login = async (
       }
       if (error.response.status === 403) {
         throw new Error(
-          "Esta aplicación está disponible para clientes y abogados activos.",
+          "Esta aplicación requiere una cuenta activa con un rol autorizado.",
         );
       }
     }
@@ -65,7 +65,9 @@ export const login = async (
   }
 
   if (
-    !data.user.roles.some((role) => role === "client" || role === "lawyer") ||
+    !data.user.roles.some(
+      (role) => role === "client" || role === "lawyer" || role === "admin",
+    ) ||
     data.user.status !== "active"
   ) {
     await publicApi
@@ -75,7 +77,7 @@ export const login = async (
       .catch(() => undefined);
 
     throw new Error(
-      "Esta aplicación está disponible para clientes y abogados activos.",
+      "Esta aplicación requiere una cuenta activa con un rol autorizado.",
     );
   }
 

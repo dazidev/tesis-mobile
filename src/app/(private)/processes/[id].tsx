@@ -54,7 +54,8 @@ export default function ProcessDetailScreen() {
     openingFileId,
     openFile,
     reload,
-    isLawyer,
+    isAdmin,
+    canManageProcesses,
   } = useProcessDetailViewModel(processId);
 
   const handleChanged = async () => {
@@ -63,16 +64,23 @@ export default function ProcessDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={isAdmin ? ["top"] : ["top", "bottom", "left", "right"]}
+    >
       <View style={styles.navigation}>
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
-          accessibilityLabel="Volver a mis procesos"
+          accessibilityLabel={
+            isAdmin ? "Volver a procesos" : "Volver a mis procesos"
+          }
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={22} color={Colors.pgray} />
-          <Text style={styles.backText}>Mis procesos</Text>
+          <Text style={styles.backText}>
+            {isAdmin ? "Procesos" : "Mis procesos"}
+          </Text>
         </Pressable>
       </View>
 
@@ -94,7 +102,9 @@ export default function ProcessDetailScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={isLawyer ? () => void handleChanged() : refresh}
+              onRefresh={
+                canManageProcesses ? () => void handleChanged() : refresh
+              }
               tintColor={Colors.pblue}
             />
           }
@@ -109,10 +119,10 @@ export default function ProcessDetailScreen() {
             </Text>
           </View>
 
-          {isLawyer && (
+          {canManageProcesses && (
             <ProcessActions process={process} onChanged={handleChanged} />
           )}
-          {isLawyer && (
+          {canManageProcesses && (
             <ProcessClientsPanel processId={process.id} revision={revision} />
           )}
 
@@ -148,7 +158,7 @@ export default function ProcessDetailScreen() {
             ) : (
               <View style={styles.stagesList}>
                 {process.stages.map((stage, index) =>
-                  isLawyer ? (
+                  canManageProcesses ? (
                     <ManagedStageAccordion
                       key={stage.id}
                       item={stage}

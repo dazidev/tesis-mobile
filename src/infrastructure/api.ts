@@ -156,7 +156,9 @@ export const refreshSession = (): Promise<RefreshResponse> => {
     if (
       !data.user ||
       !Array.isArray(data.user.roles) ||
-      !data.user.roles.some((role) => role === "client" || role === "lawyer") ||
+      !data.user.roles.some(
+        (role) => role === "client" || role === "lawyer" || role === "admin",
+      ) ||
       data.user.status !== "active"
     ) {
       await publicApi
