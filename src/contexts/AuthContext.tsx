@@ -8,7 +8,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { setSessionExpiredHandler } from "../infrastructure/api";
+import {
+  setSessionExpiredHandler,
+  setSessionRefreshedHandler,
+} from "../infrastructure/api";
 import { AuthUser } from "../interfaces/auth.interface";
 import { logoutSession, restoreSession } from "../services/auth.service";
 
@@ -68,6 +71,7 @@ export const AuthProvider = ({ children }: Props) => {
   };
 
   useEffect(() => {
+    setSessionRefreshedHandler(setUser);
     setSessionExpiredHandler(() => {
       try {
         clearClientPdfCache();
@@ -79,6 +83,7 @@ export const AuthProvider = ({ children }: Props) => {
 
     return () => {
       setSessionExpiredHandler(null);
+      setSessionRefreshedHandler(null);
     };
   }, []);
 

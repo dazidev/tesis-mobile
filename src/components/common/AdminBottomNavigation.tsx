@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../theme/colors";
@@ -7,7 +7,8 @@ import { Colors } from "../../theme/colors";
 export function AdminBottomNavigation() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const usersSelected = false;
+  const pathname = usePathname();
+  const usersSelected = pathname.startsWith("/users");
   const logsSelected = false;
   const processesSelected = !usersSelected && !logsSelected;
 
@@ -42,9 +43,11 @@ export function AdminBottomNavigation() {
       <Pressable
         style={styles.tab}
         accessibilityRole="tab"
-        accessibilityState={{ disabled: true, selected: false }}
-        accessibilityLabel="Usuarios, próximamente"
-        disabled
+        accessibilityState={{ selected: usersSelected }}
+        accessibilityLabel="Usuarios"
+        onPress={() => {
+          if (!usersSelected) router.push("/(private)/users");
+        }}
       >
         <Ionicons
           name="person-outline"

@@ -51,12 +51,19 @@ export class SessionExpiredError extends Error {
 
 let refreshPromise: Promise<RefreshResponse> | null = null;
 let onSessionExpired: (() => void) | null = null;
+let onSessionRefreshed: ((user: AuthUser) => void) | null = null;
 
 let sessionVersion = 0;
 let signingOut = false;
 
 export const setSessionExpiredHandler = (handler: (() => void) | null) => {
   onSessionExpired = handler;
+};
+
+export const setSessionRefreshedHandler = (
+  handler: ((user: AuthUser) => void) | null,
+) => {
+  onSessionRefreshed = handler;
 };
 
 export const beginSignOut = () => {
@@ -178,6 +185,7 @@ export const refreshSession = (): Promise<RefreshResponse> => {
       throw error;
     }
 
+    onSessionRefreshed?.(data.user);
     return data;
   })().finally(() => {
     refreshPromise = null;
