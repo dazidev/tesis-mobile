@@ -57,10 +57,11 @@ function DateField({
             value={date}
             mode={mode}
             display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(_, selected) => {
+            onValueChange={(_, selected) => {
               if (Platform.OS !== "ios") setMode(null);
-              if (selected) onChange(selected.toISOString());
+              onChange(selected.toISOString());
             }}
+            onDismiss={() => setMode(null)}
           />
           {Platform.OS === "ios" && (
             <ActionButton
@@ -145,7 +146,13 @@ function FormContent({ actions }: { actions: ManagementActions }) {
                 {field.label}
                 {field.optional ? " (opcional)" : ""}
               </Text>
-              {field.type === "select" ? (
+              {field.render ? (
+                field.render({
+                  value: values[field.key] ?? "",
+                  onChange: (value) => change(field.key, value),
+                  disabled: actions.busy,
+                })
+              ) : field.type === "select" ? (
                 <View style={styles.options}>
                   {field.options?.map((option) => (
                     <ActionButton
@@ -180,6 +187,9 @@ function FormContent({ actions }: { actions: ManagementActions }) {
                   autoCapitalize={field.type === "email" ? "none" : "sentences"}
                 />
               )}
+              {!!field.help && (
+                <Text style={styles.description}>{field.help}</Text>
+              )}
             </View>
           ))}
           {!!(validation || actions.error) && (
@@ -188,6 +198,7 @@ function FormContent({ actions }: { actions: ManagementActions }) {
             </Text>
           )}
           <CustomButton
+            danger={form.submitDanger}
             label={
               actions.busy ? "Guardando…" : (form.submitLabel ?? "Guardar")
             }

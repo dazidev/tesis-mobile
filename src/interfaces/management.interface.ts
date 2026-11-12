@@ -14,6 +14,7 @@ export interface ManagedProcess extends Omit<
 }
 
 export interface CreateProcessRequest {
+  managedByID?: string;
   courtNumber: string;
   caseFileNumber: string;
   type: ProcessType;

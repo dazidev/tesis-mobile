@@ -1,21 +1,28 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Alert } from "react-native";
 import { getOperationError } from "../services/management.service";
 
 export interface FormField {
   key: string;
   label: string;
+  help?: string;
   type?: "text" | "email" | "multiline" | "date" | "datetime" | "select";
   optional?: boolean;
   minLength?: number;
   maxLength?: number;
   options?: { value: string; label: string }[];
+  render?: (props: {
+    value: string;
+    onChange: (value: string) => void;
+    disabled: boolean;
+  }) => ReactNode;
 }
 
 export interface OperationForm {
   title: string;
   description?: string;
   submitLabel?: string;
+  submitDanger?: boolean;
   fields: FormField[];
   initial?: Record<string, string>;
   submit: (values: Record<string, string>) => Promise<void>;

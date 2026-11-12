@@ -1,9 +1,13 @@
 import { createProcess } from "../../services/management.service";
 import type { ProcessType } from "../../interfaces/process.interface";
-import { useManagementActions } from "../../viewmodels/useManagementActions";
+import {
+  useManagementActions,
+  type FormField,
+} from "../../viewmodels/useManagementActions";
 import { CustomButton } from "../common/CustomButton";
 import { OperationFormModal } from "../common/OperationFormModal";
 import { useAuth } from "../../contexts/AuthContext";
+import { ProcessManagerField } from "./ProcessManagerField";
 
 export function CreateProcessButton({
   onChanged,
@@ -13,6 +17,16 @@ export function CreateProcessButton({
   const actions = useManagementActions(onChanged);
   const { user } = useAuth();
   const isAdmin = !!user?.roles.includes("admin");
+  const managerFields: FormField[] = isAdmin
+    ? [
+        {
+          key: "managedByID",
+          label: "Responsable del proceso",
+          optional: true,
+          render: (props) => <ProcessManagerField {...props} />,
+        },
+      ]
+    : [];
   return (
     <>
       <CustomButton
@@ -21,7 +35,7 @@ export function CreateProcessButton({
           actions.openForm({
             title: "Crear proceso",
             description: isAdmin
-              ? "El proceso quedará pendiente de inicio y usted será su responsable."
+              ? "El proceso quedará pendiente de inicio. Use su cuenta como responsable o seleccione un abogado activo."
               : "El proceso quedará pendiente de inicio y usted será el abogado responsable.",
             fields: [
               {
@@ -30,6 +44,7 @@ export function CreateProcessButton({
                 minLength: 2,
               },
               { key: "courtNumber", label: "Juzgado", minLength: 2 },
+              ...managerFields,
               {
                 key: "type",
                 label: "Tipo de juicio",
@@ -55,6 +70,9 @@ export function CreateProcessButton({
             ],
             submit: async (values) => {
               await createProcess({
+                ...(isAdmin && values.managedByID
+                  ? { managedByID: values.managedByID }
+                  : {}),
                 courtNumber: values.courtNumber,
                 caseFileNumber: values.caseFileNumber,
                 type: values.type as ProcessType,
