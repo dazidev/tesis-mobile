@@ -9,7 +9,7 @@ export function AdminBottomNavigation() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const usersSelected = pathname.startsWith("/users");
-  const logsSelected = false;
+  const logsSelected = pathname.startsWith("/logs");
   const processesSelected = !usersSelected && !logsSelected;
 
   return (
@@ -61,9 +61,11 @@ export function AdminBottomNavigation() {
       <Pressable
         style={styles.tab}
         accessibilityRole="tab"
-        accessibilityState={{ disabled: true, selected: false }}
-        accessibilityLabel="Registros, próximamente"
-        disabled
+        accessibilityState={{ selected: logsSelected }}
+        accessibilityLabel="Registros"
+        onPress={() => {
+          if (!logsSelected) router.push("/(private)/logs");
+        }}
       >
         <Ionicons
           name="clipboard-outline"
